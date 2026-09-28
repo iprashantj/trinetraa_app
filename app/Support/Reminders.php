@@ -6,7 +6,6 @@ use App\Models\Appointment;
 use App\Models\LensSubscription;
 use App\Models\ReminderLog;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Mail;
 
 /**
  * Automated email reminders — ported from lib/reminders.js
@@ -28,11 +27,7 @@ class Reminders
 
     protected static function send(string $to, string $subject, string $html): void
     {
-        Mail::html($html, function ($message) use ($to, $subject) {
-            $message->to($to)
-                ->subject($subject)
-                ->from(env('MAIL_FROM_ADDRESS', 'noreply@trinetraa.com'), self::STORE_NAME);
-        });
+        ResendMailer::send($to, $subject, $html);
     }
 
     public static function sendLensSubscriptionReminders(): array
