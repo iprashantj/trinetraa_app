@@ -12,6 +12,8 @@ deployment:
     - /bin/cp -R tests/. $DEPLOYPATH/tests/
     - /bin/cp artisan composer.json composer.lock package.json phpunit.xml vite.config.js $DEPLOYPATH
     - /bin/cp -R public/. $PUBLICPATH
+    - /bin/sed -i "s#__DIR__.'/../vendor/autoload.php'#__DIR__.'/../trinetraa_app/vendor/autoload.php'#" $PUBLICPATH/index.php
+    - /bin/sed -i "s#__DIR__.'/../bootstrap/app.php'#__DIR__.'/../trinetraa_app/bootstrap/app.php'#" $PUBLICPATH/index.php
     - /opt/cpanel/ea-php84/root/usr/bin/php $DEPLOYPATH/artisan config:cache
     - /opt/cpanel/ea-php84/root/usr/bin/php $DEPLOYPATH/artisan route:cache
     - /opt/cpanel/ea-php84/root/usr/bin/php $DEPLOYPATH/artisan view:cache
