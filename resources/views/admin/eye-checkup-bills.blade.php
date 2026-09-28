@@ -35,12 +35,19 @@
 </div>
 
 <div class="card border-0 shadow-sm">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="ecSelectAll">
+            <label class="form-check-label" for="ecSelectAll">Select all</label>
+        </div>
+        <button type="button" class="btn btn-sm btn-outline-primary" id="ecPrintSelected" disabled>🖨️ Print Selected Invoices</button>
+    </div>
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-bordered table-hover align-middle mb-0">
-                <thead class="table-light"><tr><th>Bill #</th><th>Customer</th><th>Date</th><th class="text-end">Total ₹</th><th class="text-end">Balance ₹</th><th>Actions</th></tr></thead>
+                <thead class="table-light"><tr><th style="width:2rem"></th><th>Bill #</th><th>Customer</th><th>Date</th><th class="text-end">Total ₹</th><th class="text-end">Balance ₹</th><th>Actions</th></tr></thead>
                 <tbody id="ecRows">
-                    <tr><td colspan="6" class="text-center py-4 text-muted">Loading…</td></tr>
+                    <tr><td colspan="7" class="text-center py-4 text-muted">Loading…</td></tr>
                 </tbody>
             </table>
         </div>
@@ -87,26 +94,43 @@
         document.getElementById('ecBalance').style.color = balanceDue > 0 ? '#dc2626' : '#16a34a';
     }
 
+    function selectedIds() {
+        return Array.prototype.slice.call(document.querySelectorAll('#ecRows input[data-select]:checked'))
+            .map(function (c) { return c.getAttribute('data-select'); });
+    }
+
+    function updatePrintSelectedState() {
+        document.getElementById('ecPrintSelected').disabled = selectedIds().length === 0;
+    }
+
     function renderRows() {
         var tbody = document.getElementById('ecRows');
         if (!rows.length) {
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">No bills yet.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">No bills yet.</td></tr>';
             return;
         }
         tbody.innerHTML = rows.map(function (row) {
             var balance = Number(row.balance_due);
             return '<tr>' +
+                '<td><input type="checkbox" data-select="' + row.id + '"></td>' +
                 '<td><code>' + escapeHtml(row.bill_number) + '</code></td>' +
                 '<td>' + (row.customer_name ? escapeHtml(row.customer_name) : '—') + '</td>' +
                 '<td>' + new Date(row.bill_date).toLocaleDateString('en-IN') + '</td>' +
                 '<td class="text-end">₹' + Number(row.total).toFixed(2) + '</td>' +
                 '<td class="text-end" style="color:' + (balance > 0 ? '#dc2626' : '#16a34a') + '">₹' + balance.toFixed(2) + '</td>' +
-                '<td><button class="btn btn-sm btn-outline-danger" data-del="' + row.id + '">Delete</button></td>' +
+                '<td>' +
+                    '<a class="btn btn-sm btn-outline-secondary me-1" target="_blank" href="/admin/eye-checkup-bills/invoice-pdf?ids=' + row.id + '">🖨️ Print</a>' +
+                    '<button class="btn btn-sm btn-outline-danger" data-del="' + row.id + '">Delete</button>' +
+                '</td>' +
                 '</tr>';
         }).join('');
         tbody.querySelectorAll('[data-del]').forEach(function (b) {
             b.addEventListener('click', function () { remove(Number(b.getAttribute('data-del'))); });
         });
+        tbody.querySelectorAll('[data-select]').forEach(function (c) {
+            c.addEventListener('change', updatePrintSelectedState);
+        });
+        updatePrintSelectedState();
     }
 
     async function load() {
@@ -176,6 +200,16 @@
             document.getElementById('ecSubmit').disabled = false;
             document.getElementById('ecSubmit').textContent = 'Create Bill';
         }
+    });
+
+    document.getElementById('ecSelectAll').addEventListener('change', function (e) {
+        document.querySelectorAll('#ecRows input[data-select]').forEach(function (c) { c.checked = e.target.checked; });
+        updatePrintSelectedState();
+    });
+    document.getElementById('ecPrintSelected').addEventListener('click', function () {
+        var ids = selectedIds();
+        if (!ids.length) return;
+        window.open('/admin/eye-checkup-bills/invoice-pdf?ids=' + ids.join(','), '_blank');
     });
 
     recalcTotals();

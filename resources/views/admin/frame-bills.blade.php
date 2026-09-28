@@ -34,12 +34,19 @@
 </div>
 
 <div class="card border-0 shadow-sm">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="fbSelectAll">
+            <label class="form-check-label" for="fbSelectAll">Select all</label>
+        </div>
+        <button type="button" class="btn btn-sm btn-outline-primary" id="fbPrintSelected" disabled>🖨️ Print Selected Invoices</button>
+    </div>
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-bordered table-hover align-middle mb-0">
-                <thead class="table-light"><tr><th>Bill #</th><th>Customer</th><th>Date</th><th class="text-end">Total ₹</th><th>Items</th><th>Actions</th></tr></thead>
+                <thead class="table-light"><tr><th style="width:2rem"></th><th>Bill #</th><th>Customer</th><th>Date</th><th class="text-end">Total ₹</th><th>Items</th><th>Actions</th></tr></thead>
                 <tbody id="fbRows">
-                    <tr><td colspan="6" class="text-center py-4 text-muted">Loading…</td></tr>
+                    <tr><td colspan="7" class="text-center py-4 text-muted">Loading…</td></tr>
                 </tbody>
             </table>
         </div>
@@ -113,26 +120,43 @@
         });
     }
 
+    function selectedIds() {
+        return Array.prototype.slice.call(document.querySelectorAll('#fbRows input[data-select]:checked'))
+            .map(function (c) { return c.getAttribute('data-select'); });
+    }
+
+    function updatePrintSelectedState() {
+        document.getElementById('fbPrintSelected').disabled = selectedIds().length === 0;
+    }
+
     function renderRows() {
         var tbody = document.getElementById('fbRows');
         if (!rows.length) {
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">No bills yet.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">No bills yet.</td></tr>';
             return;
         }
         tbody.innerHTML = rows.map(function (row) {
             var customer = row.customer_name || (row.customer && row.customer.name) || '—';
             return '<tr>' +
+                '<td><input type="checkbox" data-select="' + row.id + '"></td>' +
                 '<td><code>' + escapeHtml(row.bill_number) + '</code></td>' +
                 '<td>' + escapeHtml(customer) + '</td>' +
                 '<td>' + new Date(row.bill_date).toLocaleDateString('en-IN') + '</td>' +
                 '<td class="text-end">₹' + Number(row.total).toFixed(2) + '</td>' +
                 '<td>' + (row.items ? row.items.length : 0) + '</td>' +
-                '<td><button class="btn btn-sm btn-outline-danger" data-del="' + row.id + '">Delete</button></td>' +
+                '<td>' +
+                    '<a class="btn btn-sm btn-outline-secondary me-1" target="_blank" href="/admin/frame-bills/invoice-pdf?ids=' + row.id + '">🖨️ Print</a>' +
+                    '<button class="btn btn-sm btn-outline-danger" data-del="' + row.id + '">Delete</button>' +
+                '</td>' +
                 '</tr>';
         }).join('');
         tbody.querySelectorAll('[data-del]').forEach(function (b) {
             b.addEventListener('click', function () { remove(Number(b.getAttribute('data-del'))); });
         });
+        tbody.querySelectorAll('[data-select]').forEach(function (c) {
+            c.addEventListener('change', updatePrintSelectedState);
+        });
+        updatePrintSelectedState();
     }
 
     async function load() {
@@ -191,6 +215,16 @@
 
     document.getElementById('fb_discount_amount').addEventListener('input', recalcTotals);
     document.getElementById('fb_gst_rate').addEventListener('input', recalcTotals);
+
+    document.getElementById('fbSelectAll').addEventListener('change', function (e) {
+        document.querySelectorAll('#fbRows input[data-select]').forEach(function (c) { c.checked = e.target.checked; });
+        updatePrintSelectedState();
+    });
+    document.getElementById('fbPrintSelected').addEventListener('click', function () {
+        var ids = selectedIds();
+        if (!ids.length) return;
+        window.open('/admin/frame-bills/invoice-pdf?ids=' + ids.join(','), '_blank');
+    });
 
     renderItems();
     recalcTotals();

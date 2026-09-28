@@ -80,6 +80,8 @@ Route::middleware('admin.auth')->group(function () {
     Route::view('/admin/orders', 'admin.orders');
     Route::view('/admin/frame-bills', 'admin.frame-bills');
     Route::view('/admin/eye-checkup-bills', 'admin.eye-checkup-bills');
+    Route::get('/admin/frame-bills/invoice-pdf', [\App\Http\Controllers\Admin\InvoicePdfController::class, 'frameBills']);
+    Route::get('/admin/eye-checkup-bills/invoice-pdf', [\App\Http\Controllers\Admin\InvoicePdfController::class, 'eyeCheckupBills']);
     Route::view('/admin/loyalty', 'admin.loyalty');
     Route::view('/admin/subscriptions', 'admin.subscriptions');
     Route::view('/admin/crm', 'admin.crm');

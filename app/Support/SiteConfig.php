@@ -23,6 +23,7 @@ class SiteConfig
         'store_hours'      => 'storeHours',
         'announcement_text'    => 'announcementText',
         'announcement_enabled' => 'announcementEnabled',
+        'gstin'            => 'gstin',
     ];
 
     public static function all(): array
@@ -40,6 +41,7 @@ class SiteConfig
             'storeHours' => 'Mon–Sat: 10 AM – 8 PM',
             'announcementText' => '',
             'announcementEnabled' => false,
+            'gstin' => env('GSTIN', ''),
         ];
 
         try {
