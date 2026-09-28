@@ -1,0 +1,17 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/trinetraaoptyra7/trinetraa_app/
+    - export PUBLICPATH=/home/trinetraaoptyra7/public_html/
+    - /bin/cp -R app/. $DEPLOYPATH/app/
+    - /bin/cp -R bootstrap/. $DEPLOYPATH/bootstrap/
+    - /bin/cp -R config/. $DEPLOYPATH/config/
+    - /bin/cp -R database/. $DEPLOYPATH/database/
+    - /bin/cp -R resources/. $DEPLOYPATH/resources/
+    - /bin/cp -R routes/. $DEPLOYPATH/routes/
+    - /bin/cp -R tests/. $DEPLOYPATH/tests/
+    - /bin/cp artisan composer.json composer.lock package.json phpunit.xml vite.config.js $DEPLOYPATH
+    - /bin/cp -R public/. $PUBLICPATH
+    - /opt/cpanel/ea-php84/root/usr/bin/php $DEPLOYPATH/artisan config:cache
+    - /opt/cpanel/ea-php84/root/usr/bin/php $DEPLOYPATH/artisan route:cache
+    - /opt/cpanel/ea-php84/root/usr/bin/php $DEPLOYPATH/artisan view:cache
