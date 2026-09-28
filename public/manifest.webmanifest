@@ -1,0 +1,44 @@
+{
+  "name": "Trinetraa Optician",
+  "short_name": "Trinetraa",
+  "description": "Premium eyewear and expert eye care in Nashik, Maharashtra. 1000+ frames, free eye tests, branded sunglasses.",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "background_color": "#ffffff",
+  "theme_color": "#1a3a5c",
+  "orientation": "portrait-primary",
+  "lang": "en-IN",
+  "dir": "ltr",
+  "categories": ["shopping", "health", "lifestyle"],
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Book Appointment",
+      "short_name": "Appointment",
+      "description": "Book an eye test or consultation",
+      "url": "/appointment?source=pwa-shortcut",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Browse Eyewears",
+      "short_name": "Eyewears",
+      "description": "Browse our collection of eyewear",
+      "url": "/eyewears?source=pwa-shortcut",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Contact Us",
+      "short_name": "Contact",
+      "description": "Get in touch with us",
+      "url": "/contact?source=pwa-shortcut",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false
+}

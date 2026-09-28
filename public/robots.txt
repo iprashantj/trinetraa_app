@@ -1,0 +1,20 @@
+User-agent: *
+Disallow: /admin/
+Disallow: /admin
+Disallow: /account/
+Disallow: /account
+Disallow: /api/
+Disallow: /api
+Disallow: /search
+Disallow: /compare
+Disallow: /cart
+Disallow: /cookie-policy
+Disallow: /disclaimer
+Disallow: /privacy-policy
+Disallow: /refund-policy
+Disallow: /shipping-policy
+Disallow: /terms
+
+Allow: /
+
+Sitemap: https://trinetraaoptician.com/sitemap.xml
