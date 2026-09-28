@@ -11,6 +11,32 @@
 @section('meta_description', $_brDesc)
 @section('og_image', $_brImg)
 @section('canonical', $_brUrl)
+@if($brand)
+@push('structured_data')
+@php
+    $at = '@';
+    $brandJsonLd = json_encode(array_filter([
+        $at.'context'   => 'https://schema.org',
+        $at.'type'      => 'Brand',
+        'name'          => $brand->name,
+        'description'   => $brand->description,
+        'logo'          => $brand->logo ?: null,
+        'url'           => $brand->website ?: $_brUrl,
+    ]), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    $brBreadJsonLd = json_encode([
+        $at.'context'     => 'https://schema.org',
+        $at.'type'        => 'BreadcrumbList',
+        'itemListElement' => [
+            [$at.'type' => 'ListItem', 'position' => 1, 'name' => 'Home',   'item' => $_su . '/'],
+            [$at.'type' => 'ListItem', 'position' => 2, 'name' => 'Brands', 'item' => $_su . '/brands'],
+            [$at.'type' => 'ListItem', 'position' => 3, 'name' => $brand->name, 'item' => $_brUrl],
+        ],
+    ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+@endphp
+<script type="application/ld+json">{!! $brandJsonLd !!}</script>
+<script type="application/ld+json">{!! $brBreadJsonLd !!}</script>
+@endpush
+@endif
 @section('content')
 <div id="brandRoot">
     <div class="pp-loading" style="min-height:60vh"><div class="pp-spinner"></div></div>
