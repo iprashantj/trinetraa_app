@@ -41,6 +41,16 @@
     // Owner-only sections. Pre-role tokens carry no role claim — resolve from DB.
     $adminRole = $authAdmin['role'] ?? (isset($authAdmin['id']) ? \App\Models\User::where('id', $authAdmin['id'])->value('role') : null);
     $isOwner = $adminRole === 'owner';
+    $visitsToday = 0;
+    $visitsTotal = 0;
+    try {
+        if (\Illuminate\Support\Facades\Schema::hasTable('site_visits')) {
+            $visitsToday = (int) \App\Models\SiteVisit::whereDate('visit_date', now()->toDateString())->value('count');
+            $visitsTotal = (int) \App\Models\SiteVisit::sum('count');
+        }
+    } catch (\Throwable $e) {
+        // Table not migrated yet — footer just shows zeros.
+    }
 @endphp
 <div class="admin-layout">
     <aside class="admin-sidebar">
@@ -73,6 +83,10 @@
             <div class="admin-topbar__avatar" title="{{ $adminName }}">{{ strtoupper(substr($adminName, 0, 1)) }}</div>
         </div>
         <main class="admin-main">@yield('content')</main>
+        <footer class="admin-footer" style="padding:.75rem 1.5rem;border-top:1px solid var(--pp-gray-200, #e5e7eb);display:flex;justify-content:space-between;flex-wrap:wrap;gap:.5rem;font-size:.8rem;color:#888">
+            <span>&copy; {{ date('Y') }} Trinetraa Optician — Admin Panel</span>
+            <span title="Site visitors (admin-only)">👁️ Visitors — Today: <strong>{{ number_format($visitsToday) }}</strong> &nbsp;|&nbsp; All-time: <strong>{{ number_format($visitsTotal) }}</strong></span>
+        </footer>
     </div>
 </div>
 <script>

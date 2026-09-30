@@ -5,6 +5,7 @@ use App\Http\Middleware\EnsureCustomer;
 use App\Http\Middleware\EnsureOwner;
 use App\Http\Middleware\LogAdminActivity;
 use App\Http\Middleware\SecurityHeaders;
+use App\Http\Middleware\TrackVisit;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -34,7 +35,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'customer.auth' => EnsureCustomer::class,
         ]);
 
-        $middleware->web(append: [SecurityHeaders::class]);
+        $middleware->web(append: [SecurityHeaders::class, TrackVisit::class]);
         $middleware->api(append: [SecurityHeaders::class]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
