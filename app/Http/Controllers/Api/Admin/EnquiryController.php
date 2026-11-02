@@ -11,8 +11,8 @@ class EnquiryController extends Controller
 {
     public function index(Request $request)
     {
-        $page = (int) ($request->query('page', 1));
-        $perPage = (int) ($request->query('per_page', 20));
+        $page = max(1, (int) ($request->query('page', 1)));
+        $perPage = max(1, min(500, (int) ($request->query('per_page', 20))));
         $skip = ($page - 1) * $perPage;
 
         $rows = ContactEnquiry::query()->orderByDesc('created_at')->skip($skip)->take($perPage)->get();
@@ -24,7 +24,7 @@ class EnquiryController extends Controller
     public function product(Request $request)
     {
         $page = max(1, (int) ($request->query('page', 1)));
-        $perPage = min(100, (int) ($request->query('per_page', 50)));
+        $perPage = max(1, min(100, (int) ($request->query('per_page', 50))));
         $skip = ($page - 1) * $perPage;
 
         $items = ProductEnquiry::query()->orderByDesc('created_at')->skip($skip)->take($perPage)->get();

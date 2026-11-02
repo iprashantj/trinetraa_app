@@ -9,7 +9,7 @@ abstract class Controller
     /**
      * Standard success envelope — mirrors the Next.js `{ data, meta }` shape.
      */
-    protected function data($data, array $meta = null, int $status = 200): JsonResponse
+    protected function data($data, ?array $meta = null, int $status = 200): JsonResponse
     {
         $payload = ['data' => $data];
         if ($meta !== null) {

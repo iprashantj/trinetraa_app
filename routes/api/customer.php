@@ -4,7 +4,7 @@ use App\Http\Controllers\Api\Customer\RecentlyViewedController;
 use App\Http\Controllers\Api\Customer\WishlistController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware('customer.auth')->group(function () {
+Route::middleware(['customer.auth', 'throttle:customer-writes'])->group(function () {
     // ─── Wishlist ──────────────────────────────────────────────────────────--
     Route::get('customer/wishlist', [WishlistController::class, 'index']);
     Route::post('customer/wishlist', [WishlistController::class, 'store']);

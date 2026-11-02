@@ -26,12 +26,13 @@ class EyewearController extends Controller
         'flipkart_enabled' => 'sometimes|boolean',
         'availability' => 'sometimes|in:in_store,amazon,flipkart,both,out_of_stock',
         'marketplace_sku' => 'nullable|string|max:255',
+        'stock_item_id' => 'nullable|integer|exists:stock_items,id',
     ];
 
     public function index(Request $request)
     {
-        $page = (int) ($request->query('page') ?: 1);
-        $perPage = (int) ($request->query('per_page') ?: 100);
+        $page = max(1, (int) ($request->query('page') ?: 1));
+        $perPage = max(1, min(500, (int) ($request->query('per_page') ?: 100)));
         $categoryId = $request->query('category_id');
         $skip = ($page - 1) * $perPage;
 
@@ -116,6 +117,7 @@ class EyewearController extends Controller
             'flipkart_enabled' => $request->boolean('flipkart_enabled'),
             'availability' => $request->input('availability', 'in_store') ?: 'in_store',
             'marketplace_sku' => $request->input('marketplace_sku'),
+            'stock_item_id' => $request->input('stock_item_id') ?: null,
         ];
     }
 }

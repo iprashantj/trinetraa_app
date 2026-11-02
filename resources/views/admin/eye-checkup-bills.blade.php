@@ -103,6 +103,15 @@
         document.getElementById('ecPrintSelected').disabled = selectedIds().length === 0;
     }
 
+    async function shareBill(id, kind) {
+        try {
+            var j = await ERP.api('/api/admin/eye-checkup-bills/' + id + '/share');
+            var u = kind === 'wa' ? j.data.whatsapp_url : j.data.sms_url;
+            if (!u) { ERP.notify('Add a valid customer mobile number on this bill to share it.', 'warning'); return; }
+            if (kind === 'wa') window.open(u, '_blank'); else window.location.href = u;
+        } catch (e) { ERP.error(e); }
+    }
+
     function renderRows() {
         var tbody = document.getElementById('ecRows');
         if (!rows.length) {
@@ -113,19 +122,26 @@
             var balance = Number(row.balance_due);
             return '<tr>' +
                 '<td><input type="checkbox" data-select="' + row.id + '"></td>' +
-                '<td><code>' + escapeHtml(row.bill_number) + '</code></td>' +
+                '<td><code>' + escapeHtml(row.invoice_no || row.bill_number) + '</code></td>' +
                 '<td>' + (row.customer_name ? escapeHtml(row.customer_name) : '—') + '</td>' +
                 '<td>' + new Date(row.bill_date).toLocaleDateString('en-IN') + '</td>' +
                 '<td class="text-end">₹' + Number(row.total).toFixed(2) + '</td>' +
                 '<td class="text-end" style="color:' + (balance > 0 ? '#dc2626' : '#16a34a') + '">₹' + balance.toFixed(2) + '</td>' +
                 '<td>' +
                     '<a class="btn btn-sm btn-outline-secondary me-1" target="_blank" href="/admin/eye-checkup-bills/invoice-pdf?ids=' + row.id + '">🖨️ Print</a>' +
+                    '<button class="btn btn-sm btn-outline-success me-1" data-wa="' + row.id + '">WhatsApp</button>' +
+                    '<button class="btn btn-sm btn-outline-secondary me-1" data-sms="' + row.id + '">SMS</button>' +
                     '<button class="btn btn-sm btn-outline-danger" data-del="' + row.id + '">Delete</button>' +
                 '</td>' +
                 '</tr>';
         }).join('');
         tbody.querySelectorAll('[data-del]').forEach(function (b) {
             b.addEventListener('click', function () { remove(Number(b.getAttribute('data-del'))); });
+        });
+        ['wa', 'sms'].forEach(function (kind) {
+            tbody.querySelectorAll('[data-' + kind + ']').forEach(function (b) {
+                b.addEventListener('click', function () { shareBill(b.getAttribute('data-' + kind), kind); });
+            });
         });
         tbody.querySelectorAll('[data-select]').forEach(function (c) {
             c.addEventListener('change', updatePrintSelectedState);

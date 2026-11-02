@@ -18,6 +18,10 @@ Route::get('/sitemap-eyewears.xml', [SitemapController::class, 'eyewears']);
 Route::get('/sitemap-brands.xml',   [SitemapController::class, 'brands']);
 Route::get('/sitemap-blog.xml',     [SitemapController::class, 'blog']);
 
+Route::get('/invoice/{token}', [\App\Http\Controllers\StoreController::class, 'invoice'])->where('token', '[A-Za-z0-9]+');
+Route::get('/stores', [\App\Http\Controllers\StoreController::class, 'index']);
+Route::get('/stores/{code}', [\App\Http\Controllers\StoreController::class, 'show'])->where('code', '[A-Za-z0-9_-]+');
+
 // ─── Public site ─────────────────────────────────────────────────────────────
 Route::view('/', 'public.home');
 Route::view('/landing', 'public.landing');
@@ -76,6 +80,26 @@ Route::middleware('admin.auth')->group(function () {
     Route::view('/admin/pincodes', 'admin.pincodes');
     Route::view('/admin/settings', 'admin.settings');
     Route::view('/admin/stock-items', 'admin.stock-items');
+    // ERP modules (each gated by a permission; owners always pass)
+    Route::view('/admin/branches', 'admin.branches')->middleware('admin.perm:settings');
+    Route::view('/admin/suppliers', 'admin.suppliers')->middleware('admin.perm:inventory');
+    Route::view('/admin/stock-inward', 'admin.stock-inward')->middleware('admin.perm:inventory');
+    Route::view('/admin/stock-alerts', 'admin.stock-alerts')->middleware('admin.perm:inventory');
+    Route::view('/admin/stock-ledger', 'admin.stock-ledger')->middleware('admin.perm:inventory');
+    Route::view('/admin/transfers', 'admin.transfers')->middleware('admin.perm:transfers');
+    Route::view('/admin/billing', 'admin.billing')->middleware('admin.perm:billing');
+    Route::view('/admin/returns', 'admin.returns')->middleware('admin.perm:billing');
+    Route::view('/admin/reports', 'admin.reports')->middleware('admin.perm:reports');
+    Route::view('/admin/purchase-orders', 'admin.purchase-orders')->middleware('admin.perm:inventory');
+    Route::view('/admin/stock-takes', 'admin.stock-takes')->middleware('admin.perm:inventory');
+    Route::view('/admin/work-orders', 'admin.work-orders')->middleware('admin.perm:billing');
+    Route::view('/admin/coupons', 'admin.coupons')->middleware('admin.perm:settings');
+    Route::view('/admin/reservations', 'admin.reservations')->middleware('admin.perm:billing');
+    Route::view('/admin/profit-report', 'admin.profit-report')->middleware('admin.perm:reports');
+    Route::view('/admin/gst-report', 'admin.gst-report')->middleware('admin.perm:reports');
+    Route::view('/admin/security', 'admin.security');
+    Route::get('/admin/customers/{id}', fn ($id) => view('admin.customer-profile', ['customerId' => (int) $id]))->whereNumber('id')->middleware('admin.perm:customers');
+    Route::get('/admin/eye-tests/{id}/report', [\App\Http\Controllers\Api\Admin\EyeTestController::class, 'report'])->whereNumber('id')->middleware('admin.perm:prescriptions');
     Route::view('/admin/customers', 'admin.customers');
     Route::view('/admin/orders', 'admin.orders');
     Route::view('/admin/frame-bills', 'admin.frame-bills');

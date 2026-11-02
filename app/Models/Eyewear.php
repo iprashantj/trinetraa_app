@@ -11,7 +11,7 @@ class Eyewear extends Model
         'category_id', 'name', 'slug', 'description', 'price', 'discount_percentage', 'image',
         'brand', 'is_active', 'sort_order', 'amazon_url', 'flipkart_url', 'amazon_enabled',
         'flipkart_enabled', 'availability', 'marketplace_sku', 'try_on_image', 'try_on_offset_x',
-        'try_on_offset_y', 'try_on_scale', 'face_shape_tags',
+        'try_on_offset_y', 'try_on_scale', 'face_shape_tags', 'stock_item_id',
     ];
     protected $casts = [
         'price' => 'decimal:2',

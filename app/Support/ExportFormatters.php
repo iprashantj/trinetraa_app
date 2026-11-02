@@ -15,7 +15,12 @@ class ExportFormatters
             $cells = [];
             foreach ($columns as $c) {
                 $val = isset($c['fn']) ? ($c['fn'])($row) : (data_get($row, $c['key']) ?? '');
-                $str = str_replace('"', '""', (string) $val);
+                $str = (string) $val;
+                // Neutralise spreadsheet formula injection (=, +, -, @, tab, CR) on text values.
+                if ($str !== '' && ! is_numeric($str) && preg_match('/^[=+\-@\t\r]/', $str)) {
+                    $str = "'" . $str;
+                }
+                $str = str_replace('"', '""', $str);
                 $cells[] = '"' . $str . '"';
             }
             $lines[] = implode(',', $cells);
@@ -27,10 +32,12 @@ class ExportFormatters
     {
         $entries = [];
         foreach ($orders as $o) {
-            $date = str_replace('/', '', date('d/m/Y', strtotime(data_get($o, 'order_date') ?? data_get($o, 'created_at'))));
-            $narration = data_get($o, 'order_number') ?? data_get($o, 'bill_number') ?? data_get($o, 'id');
-            $amount = data_get($o, 'total');
-            $party = data_get($o, 'customer.name') ?? data_get($o, 'customer_name') ?? '';
+            $ts = strtotime((string) (data_get($o, 'order_date') ?? data_get($o, 'bill_date') ?? data_get($o, 'created_at'))) ?: time();
+            $date = date('dmY', $ts);
+            $x = fn ($v) => htmlspecialchars((string) $v, ENT_XML1 | ENT_QUOTES, 'UTF-8');
+            $narration = $x(data_get($o, 'order_number') ?? data_get($o, 'bill_number') ?? data_get($o, 'id'));
+            $amount = (float) data_get($o, 'total');
+            $party = $x(data_get($o, 'customer.name') ?? data_get($o, 'customer_name') ?? '');
             $partyLine = $party !== '' ? "<PARTYLEDGERNAME>{$party}</PARTYLEDGERNAME>" : '';
             $entries[] = "
   <VOUCHER VCHTYPE=\"Sales\" ACTION=\"Create\">

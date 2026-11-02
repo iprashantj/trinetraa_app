@@ -55,6 +55,10 @@
                     <option value="out_of_stock">Out of Stock</option>
                 </select>
             </div>
+            <div class="col-md-4"><label class="form-label fw-semibold">Linked stock item</label>
+                <select class="form-select" name="stock_item_id"><option value="">None</option></select>
+                <div class="form-text">Shows live in-store availability on the website.</div>
+            </div>
             <div class="col-md-4"><label class="form-label fw-semibold">Marketplace SKU</label><input class="form-control" name="marketplace_sku" placeholder="e.g. RB3025-GLD-55"></div>
             <div class="col-12">
                 <label class="form-label fw-semibold">Amazon Product URL</label>
@@ -131,6 +135,15 @@
             });
     }
 
+    function loadStockItems() {
+        return fetch('/api/admin/stock-items/lookup').then(function (r) { return r.ok ? r.json() : { data: [] }; }).then(function (d) {
+            var sel = form.stock_item_id;
+            sel.innerHTML = '<option value="">None</option>' + (d.data || []).map(function (s) {
+                return '<option value="' + s.id + '">' + esc(s.name) + (s.model_number ? ' (' + esc(s.model_number) + ')' : '') + '</option>';
+            }).join('');
+        }).catch(function () {});
+    }
+
     function loadEyewears() {
         var q = categoryFilter.value ? '?category_id=' + encodeURIComponent(categoryFilter.value) : '';
         return fetch('/api/admin/eyewears' + q)
@@ -199,6 +212,7 @@
         form.flipkart_enabled.checked = (row.flipkart_enabled != null ? row.flipkart_enabled : false);
         form.availability.value = row.availability || 'in_store';
         form.marketplace_sku.value = row.marketplace_sku || '';
+        form.stock_item_id.value = row.stock_item_id || '';
         formTitle.textContent = 'Edit Eyewear #' + row.id;
         submitBtn.textContent = 'Update Eyewear';
         cancelBtn.style.display = '';
@@ -238,7 +252,8 @@
             amazon_enabled: form.amazon_enabled.checked,
             flipkart_enabled: form.flipkart_enabled.checked,
             availability: form.availability.value,
-            marketplace_sku: form.marketplace_sku.value
+            marketplace_sku: form.marketplace_sku.value,
+            stock_item_id: form.stock_item_id.value ? Number(form.stock_item_id.value) : null
         };
     }
 
@@ -288,6 +303,7 @@
             folder:      'eyewears',
             placeholder: '🕶️'
         });
+        loadStockItems();
         loadCategories().then(loadEyewears);
     });
 })();

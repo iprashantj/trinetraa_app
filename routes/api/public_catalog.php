@@ -40,7 +40,7 @@ Route::get('public/services', [ServiceController::class, 'index']);
 Route::get('public/offers', [OfferController::class, 'index']);
 
 // ─── Search ──────────────────────────────────────────────────────────────────
-Route::get('public/search', [SearchController::class, 'index']);
+Route::get('public/search', [SearchController::class, 'index'])->middleware('throttle:public');
 
 // ─── Settings ────────────────────────────────────────────────────────────────
 Route::get('public/settings', [SettingsController::class, 'index']);

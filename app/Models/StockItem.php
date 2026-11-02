@@ -9,7 +9,7 @@ class StockItem extends Model
     protected $table = 'stock_items';
     protected $fillable = [
         'name', 'model_number', 'sku', 'category_id', 'current_stock', 'sale_price',
-        'cost_price', 'description', 'image',
+        'cost_price', 'description', 'image', 'brand', 'barcode', 'pack_quantity', 'supplier_id', 'hsn_code', 'gst_rate',
     ];
     protected $casts = [
         'current_stock' => 'integer',

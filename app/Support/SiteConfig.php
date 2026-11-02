@@ -24,6 +24,8 @@ class SiteConfig
         'announcement_text'    => 'announcementText',
         'announcement_enabled' => 'announcementEnabled',
         'gstin'            => 'gstin',
+        'upi_id'           => 'upiId',
+        'upi_name'         => 'upiName',
     ];
 
     public static function all(): array
@@ -42,6 +44,8 @@ class SiteConfig
             'announcementText' => '',
             'announcementEnabled' => false,
             'gstin' => env('GSTIN', ''),
+            'upiId' => env('UPI_ID', ''),
+            'upiName' => env('UPI_NAME', 'Trinetraa Optician'),
         ];
 
         try {

@@ -54,9 +54,18 @@ class SitemapController extends Controller
             ['/appointment', '0.7', 'monthly'],
         ];
 
-        $xml = $this->urlset(array_map(fn ($p) => $this->url(
-            $this->base . $p[0], now()->toDateString(), $p[2], $p[1]
-        ), $pages));
+        $urls = array_map(fn ($p) => $this->url($this->base . $p[0], now()->toDateString(), $p[2], $p[1]), $pages);
+        try {
+            foreach (\App\Models\Branch::where('is_active', true)->get(['code', 'address', 'phone', 'updated_at']) as $b) {
+                if (! $b->address && ! $b->phone && strtolower($b->code) !== 'nsk') {
+                    continue; // placeholder store pages are noindex, so keep them out of the sitemap
+                }
+                $urls[] = $this->url($this->base . '/stores/' . strtolower($b->code), $b->updated_at->toDateString(), 'monthly', '0.8');
+            }
+        } catch (\Throwable $e) {
+            // branches table not migrated yet
+        }
+        $xml = $this->urlset($urls);
 
         return $this->response($xml);
     }

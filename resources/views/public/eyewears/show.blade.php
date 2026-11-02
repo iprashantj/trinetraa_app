@@ -101,6 +101,7 @@
     var discount = Number(product.discount_percentage || 0);
     var salePrice = discount > 0 ? Number(product.price) * (1 - discount / 100) : null;
     var avail = AVAILABILITY_LABELS[product.availability] || AVAILABILITY_LABELS.in_store;
+    if (product.stock_text) { avail = Object.assign({}, avail, { label: product.stock_text }); }
     var isOutOfStock = product.availability === "out_of_stock";
     var priceText = salePrice !== null ? salePrice.toFixed(0) : Number(product.price).toFixed(0);
     var waNum = (window.__SITE && window.__SITE.whatsapp) ? window.__SITE.whatsapp : "918888899737";
@@ -150,6 +151,7 @@
             (product.description ? '<p style="color:var(--pp-gray-600);line-height:1.7;margin-bottom:1.5rem">' + esc(product.description) + '</p>' : '') +
             '<div style="display:inline-flex;align-items:center;gap:0.5rem;background:' + avail.bg + ';color:' + avail.color + ';border-radius:2rem;padding:0.35rem 0.9rem;font-size:0.82rem;font-weight:700;margin-bottom:1.5rem"><span>●</span>' + esc(avail.label) + '</div>' +
             actionsHtml +
+            '<div id="ewReserve"></div>' +
             '<div id="ewPincode"></div>' +
             '<div id="ewCompareRow" style="display:flex;gap:0.75rem;margin-bottom:0.75rem"></div>' +
             '<a href="/appointment" class="pp-btn-outline" style="display:flex;width:100%;text-align:center;justify-content:center;margin-bottom:0.75rem">📅 Book Store Visit</a>' +
@@ -164,6 +166,7 @@
     else renderCartControl();
     renderPincode();
     renderCompareRow();
+    renderReserve();
 
     var enqBtn = document.getElementById("ewEnquiryBtn");
     if (enqBtn) enqBtn.addEventListener("click", openEnquiryModal);
@@ -198,6 +201,51 @@
         renderCartControl();
       });
     }
+  }
+
+  // ── Reserve for store pickup (only when ERP stock shows a free unit at some branch) ──
+  function renderReserve() {
+    var wrap = document.getElementById("ewReserve");
+    var branches = product.reservable_branches || [];
+    if (!wrap || product.availability === "out_of_stock" || !branches.length) return;
+    var field = "padding:0.65rem 0.9rem;border:1.5px solid var(--pp-gray-200);border-radius:10px;font-size:0.875rem;font-family:inherit;width:100%";
+    wrap.innerHTML = '<div style="border:1.5px solid rgba(45,212,191,0.4);background:rgba(45,212,191,0.08);border-radius:16px;padding:1.1rem 1.25rem;margin-bottom:1.25rem">' +
+      '<div style="font-weight:700;margin-bottom:0.25rem">🏬 Reserve for store pickup</div>' +
+      '<p style="color:var(--pp-gray-600);font-size:0.85rem;margin:0 0 0.75rem">We hold it for you for 48 hours. Pay and collect at the store.</p>' +
+      '<button type="button" id="ewResOpen" class="trin-btn trin-btn--primary" style="display:inline-flex;padding:0.65rem 1.25rem;border-radius:999px;background:#14B8A6;color:#04201d;font-weight:700;border:none;cursor:pointer;font-family:inherit">Reserve now</button>' +
+      '<form id="ewResForm" style="display:none;flex-direction:column;gap:0.6rem;margin-top:0.85rem" novalidate>' +
+        '<div id="ewResErr" role="alert" style="color:#f87171;font-size:0.85rem;display:none"></div>' +
+        '<select id="ewResBranch" style="' + field + '">' + branches.map(function (b) { return '<option value="' + b.id + '">' + esc(b.name) + ' store</option>'; }).join("") + '</select>' +
+        '<input id="ewResName" placeholder="Your name *" autocomplete="name" maxlength="100" style="' + field + '">' +
+        '<input id="ewResPhone" type="tel" placeholder="Mobile number *" autocomplete="tel" maxlength="16" style="' + field + '">' +
+        '<input id="ewResEmail" type="email" placeholder="Email (optional, for confirmation)" autocomplete="email" style="' + field + '">' +
+        '<input id="ewResWeb" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0">' +
+        '<button id="ewResSubmit" type="submit" class="trin-btn trin-btn--primary" style="padding:0.7rem;border-radius:10px;background:#14B8A6;color:#04201d;font-weight:700;border:none;cursor:pointer;font-family:inherit">Confirm reservation</button>' +
+      '</form></div>';
+    var form = document.getElementById("ewResForm"), err = document.getElementById("ewResErr");
+    document.getElementById("ewResOpen").addEventListener("click", function () { form.style.display = "flex"; this.style.display = "none"; });
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      err.style.display = "none";
+      var btn = document.getElementById("ewResSubmit"); btn.disabled = true; btn.textContent = "Reserving…";
+      fetch("/api/public/reservations", {
+        method: "POST", headers: { "Content-Type": "application/json", "Accept": "application/json" },
+        body: JSON.stringify({
+          eyewear_id: product.id, branch_id: Number(document.getElementById("ewResBranch").value), quantity: 1,
+          name: document.getElementById("ewResName").value, phone: document.getElementById("ewResPhone").value,
+          email: document.getElementById("ewResEmail").value || null, website: document.getElementById("ewResWeb").value
+        })
+      }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+        .then(function (res) {
+          if (!res.ok) {
+            var m = res.j.message || "Could not reserve.";
+            if (res.j.errors) { m = Object.keys(res.j.errors).map(function (k) { return res.j.errors[k]; }).join(" "); }
+            err.textContent = m; err.style.display = "block"; btn.disabled = false; btn.textContent = "Confirm reservation"; return;
+          }
+          var d = res.j.data;
+          wrap.innerHTML = '<div style="background:rgba(52,211,153,0.15);color:#34d399;padding:1rem;border-radius:12px;margin-bottom:1.25rem;line-height:1.6"><strong>✅ Reserved!</strong><br>Your code: <strong>' + esc(d.code) + '</strong><br>Show it at the ' + esc(d.branch || "store") + ' counter within 48 hours.</div>';
+        }).catch(function () { err.textContent = "Network error. Please try again."; err.style.display = "block"; btn.disabled = false; btn.textContent = "Confirm reservation"; });
+    });
   }
 
   // ── Compare row ──

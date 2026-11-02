@@ -3,6 +3,7 @@
 use App\Http\Middleware\EnsureAdmin;
 use App\Http\Middleware\EnsureCustomer;
 use App\Http\Middleware\EnsureOwner;
+use App\Http\Middleware\EnsurePermission;
 use App\Http\Middleware\LogAdminActivity;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\TrackVisit;
@@ -31,6 +32,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin.auth' => EnsureAdmin::class,
             'admin.owner' => EnsureOwner::class,
+            'admin.perm' => EnsurePermission::class,
             'admin.log' => LogAdminActivity::class,
             'customer.auth' => EnsureCustomer::class,
         ]);
@@ -42,6 +44,26 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*'),
         );
+
+        // Unhandled exceptions → storage/logs/errors-YYYY-MM-DD.log with request context.
+        // Sentry hook: to forward them too, `composer require sentry/sentry-laravel`, set SENTRY_LARAVEL_DSN in .env and
+        // add `\Sentry\Laravel\Integration::handles($exceptions);` here (it is inert until the package is installed).
+        $exceptions->report(function (\Throwable $e) {
+            if ($e instanceof ValidationException || $e instanceof \Illuminate\Auth\AuthenticationException
+                || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface && $e->getStatusCode() < 500) {
+                return;
+            }
+            try {
+                $req = request();
+                \Illuminate\Support\Facades\Log::channel('errors')->error($e->getMessage(), [
+                    'exception' => get_class($e), 'file' => $e->getFile() . ':' . $e->getLine(),
+                    'method' => $req->method(), 'url' => $req->fullUrl(), 'ip' => $req->ip(),
+                    'admin_id' => $req->attributes->get('admin')['id'] ?? null, 'trace' => collect(explode(PHP_EOL, $e->getTraceAsString()))->take(8)->all(),
+                ]);
+            } catch (\Throwable) {
+                // logging must never break the response
+            }
+        });
 
         // Mirror the Next.js apiError.js validation shape: { message, errors }.
         $exceptions->render(function (ValidationException $e, Request $request) {

@@ -10,7 +10,11 @@ class Jwt
 {
     protected static function secret(): string
     {
-        return env('JWT_SECRET', 'trinetra_secret');
+        $secret = config('app.jwt_secret');
+        if (! is_string($secret) || strlen($secret) < 32) {
+            throw new \RuntimeException('JWT_SECRET is missing or too short (min 32 chars).');
+        }
+        return $secret;
     }
 
     protected static function b64(string $data): string
@@ -78,6 +82,7 @@ class Jwt
 
     public static function signAdmin(array $payload): string
     {
+        $payload['type'] = 'admin';
         return self::sign($payload, 60 * 60 * 8); // 8h
     }
 

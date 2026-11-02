@@ -13,7 +13,7 @@ class LoyaltyController extends Controller
     public function index(Request $request)
     {
         $page = max(1, (int) ($request->query('page') ?: 1));
-        $limit = min(100, (int) ($request->query('limit') ?: 20));
+        $limit = max(1, min(100, (int) ($request->query('limit') ?: 20)));
         $skip = ($page - 1) * $limit;
 
         $accounts = LoyaltyAccount::query()

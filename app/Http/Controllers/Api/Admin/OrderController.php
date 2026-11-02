@@ -11,29 +11,29 @@ use Illuminate\Support\Facades\DB;
 class OrderController extends Controller
 {
     private array $storeRules = [
-        'type' => 'required|string',
+        'type' => 'required|string|max:50',
         'customer_id' => 'nullable|integer|min:1',
         'order_date' => ['required', 'string', 'regex:/^\d{4}-\d{2}-\d{2}$/'],
-        'tax' => 'sometimes|numeric|min:0',
-        'notes' => 'nullable|string',
+        'tax' => 'sometimes|numeric|min:0|max:10000000',
+        'notes' => 'nullable|string|max:2000',
         'items' => 'required|array|min:1',
         'items.*.stock_item_id' => 'required|integer|min:1',
-        'items.*.quantity' => 'required|integer|min:1',
-        'items.*.unit_price' => 'required|numeric|min:0',
+        'items.*.quantity' => 'required|integer|min:1|max:10000',
+        'items.*.unit_price' => 'required|numeric|min:0|max:10000000',
     ];
 
     private array $updateRules = [
-        'type' => 'required|string',
+        'type' => 'required|string|max:50',
         'customer_id' => 'nullable|integer|min:1',
         'order_date' => ['required', 'string', 'regex:/^\d{4}-\d{2}-\d{2}$/'],
-        'tax' => 'sometimes|numeric|min:0',
-        'notes' => 'nullable|string',
+        'tax' => 'sometimes|numeric|min:0|max:10000000',
+        'notes' => 'nullable|string|max:2000',
     ];
 
     public function index(Request $request)
     {
-        $page = (int) ($request->query('page') ?: 1);
-        $perPage = (int) ($request->query('per_page') ?: 20);
+        $page = max(1, (int) ($request->query('page') ?: 1));
+        $perPage = max(1, min(500, (int) ($request->query('per_page') ?: 20)));
         $skip = ($page - 1) * $perPage;
 
         $rows = Order::query()
@@ -112,6 +112,7 @@ class OrderController extends Controller
             'customer_id' => $request->input('customer_id'),
             'order_date' => $request->input('order_date'),
             'tax' => (float) $request->input('tax', 0),
+            'total' => (float) $row->subtotal + (float) $request->input('tax', 0),
             'notes' => $request->input('notes'),
         ]);
 

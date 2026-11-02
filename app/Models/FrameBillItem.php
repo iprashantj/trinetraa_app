@@ -8,7 +8,7 @@ class FrameBillItem extends Model
 {
     protected $table = 'frame_bill_items';
     protected $fillable = [
-        'frame_bill_id', 'brand_name', 'model_number', 'price', 'discount', 'quantity', 'subtotal',
+        'frame_bill_id', 'stock_item_id', 'brand_name', 'model_number', 'price', 'discount', 'quantity', 'subtotal', 'hsn_code', 'cost_price',
     ];
     protected $casts = [
         'price' => 'decimal:2',

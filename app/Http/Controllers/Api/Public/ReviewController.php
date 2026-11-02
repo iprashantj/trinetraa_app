@@ -11,8 +11,8 @@ class ReviewController extends Controller
 {
     public function index(Request $request)
     {
-        $page = (int) ($request->query('page', 1));
-        $perPage = (int) ($request->query('per_page', 9));
+        $page = max(1, (int) ($request->query('page', 1)));
+        $perPage = max(1, min(500, (int) ($request->query('per_page', 9))));
         $skip = ($page - 1) * $perPage;
         $eyewearId = $request->query('eyewear_id');
 

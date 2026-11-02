@@ -11,13 +11,14 @@
             @include('admin.pdf._invoice-header', ['bill' => $bill, 'title' => 'TAX INVOICE'])
             <table class="item-table">
                 <thead>
-                    <tr><th>Brand</th><th>Model</th><th class="text-end">Price</th><th class="text-end">Discount</th><th class="text-end">Qty</th><th class="text-end">Subtotal</th></tr>
+                    <tr><th>Brand</th><th>Model</th><th>HSN</th><th class="text-end">Price</th><th class="text-end">Discount</th><th class="text-end">Qty</th><th class="text-end">Subtotal</th></tr>
                 </thead>
                 <tbody>
                     @foreach($bill->items as $item)
                     <tr>
                         <td>{{ $item->brand_name }}</td>
                         <td>{{ $item->model_number ?: '—' }}</td>
+                        <td>{{ $item->hsn_code ?: '—' }}</td>
                         <td class="text-end">₹{{ number_format($item->price, 2) }}</td>
                         <td class="text-end">₹{{ number_format($item->discount, 2) }}</td>
                         <td class="text-end">{{ $item->quantity }}</td>
@@ -28,8 +29,15 @@
             </table>
             <table class="totals-table">
                 <tr><td>Discount</td><td class="text-end">₹{{ number_format($bill->discount_amount, 2) }}</td></tr>
-                <tr><td>Subtotal</td><td class="text-end">₹{{ number_format($bill->subtotal, 2) }}</td></tr>
+                @if((float) $bill->coupon_discount > 0)<tr><td>Coupon ({{ $bill->coupon_code }})</td><td class="text-end">₹{{ number_format($bill->coupon_discount, 2) }}</td></tr>@endif
+                @if((float) $bill->loyalty_discount > 0)<tr><td>Loyalty points ({{ $bill->loyalty_points_used }})</td><td class="text-end">₹{{ number_format($bill->loyalty_discount, 2) }}</td></tr>@endif
+                <tr><td>Taxable value</td><td class="text-end">₹{{ number_format($bill->subtotal, 2) }}</td></tr>
+                @if((float) $bill->tax > 0)
+                <tr><td>CGST ({{ number_format($bill->gst_rate / 2, 2) }}%)</td><td class="text-end">₹{{ number_format($bill->cgst ?: $bill->tax / 2, 2) }}</td></tr>
+                <tr><td>SGST ({{ number_format($bill->gst_rate / 2, 2) }}%)</td><td class="text-end">₹{{ number_format($bill->sgst ?: $bill->tax / 2, 2) }}</td></tr>
+                @else
                 <tr><td>GST ({{ number_format($bill->gst_rate, 2) }}%)</td><td class="text-end">₹{{ number_format($bill->tax, 2) }}</td></tr>
+                @endif
                 <tr class="grand"><td>Total</td><td class="text-end">₹{{ number_format($bill->total, 2) }}</td></tr>
             </table>
             <div class="clearfix"></div>

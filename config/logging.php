@@ -73,6 +73,15 @@ return [
             'replace_placeholders' => true,
         ],
 
+        // Unhandled exceptions with request context (see bootstrap/app.php). Kept 30 days.
+        'errors' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/errors.log'),
+            'level' => 'error',
+            'days' => 30,
+            'replace_placeholders' => true,
+        ],
+
         'slack' => [
             'driver' => 'slack',
             'url' => env('LOG_SLACK_WEBHOOK_URL'),

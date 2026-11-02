@@ -1,4 +1,4 @@
-const CACHE_VERSION = "trinetraa-v2";
+const CACHE_VERSION = "trinetraa-v3";
 const STATIC_CACHE = CACHE_VERSION + "-static";
 const IMAGE_CACHE = CACHE_VERSION + "-images";
 const API_CACHE = CACHE_VERSION + "-api";
@@ -39,6 +39,9 @@ self.addEventListener("fetch", (e) => {
 
   // Never cache admin pages or auth API
   if (url.pathname.startsWith("/admin") || url.pathname.startsWith("/api/auth") || url.pathname.startsWith("/api/customer/auth")) return;
+
+  // Never cache per-customer or one-time API responses
+  if (/^\/api\/public\/(loyalty|subscriptions|push-subscribe|reviews\/captcha)/.test(url.pathname) || url.pathname.startsWith("/api/customer/")) return;
 
   // API read endpoints: stale-while-revalidate (5 min TTL)
   if (url.pathname.startsWith("/api/public/")) {

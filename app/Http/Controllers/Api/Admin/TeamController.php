@@ -14,7 +14,7 @@ class TeamController extends Controller
     public function index()
     {
         return $this->data(
-            User::orderBy('created_at')->get(['id', 'name', 'email', 'role', 'is_active', 'created_at'])
+            User::orderBy('created_at')->get(['id', 'name', 'email', 'role', 'is_active', 'branch_id', 'permissions', 'totp_enabled', 'created_at'])
         );
     }
 
@@ -25,6 +25,9 @@ class TeamController extends Controller
             'email' => 'required|string|email|max:255|unique:users,email',
             'password' => 'required|string|min:8|max:100',
             'role' => 'required|in:owner,staff',
+            'branch_id' => 'nullable|integer|exists:branches,id',
+            'permissions' => 'nullable|array',
+            'permissions.*' => 'string|in:' . implode(',', array_keys(\App\Support\Access::PERMISSIONS)),
         ]);
 
         $user = User::create([
@@ -33,9 +36,11 @@ class TeamController extends Controller
             'password_hash' => password_hash($data['password'], PASSWORD_BCRYPT, ['cost' => 10]),
             'role' => $data['role'],
             'is_active' => true,
+            'branch_id' => $data['branch_id'] ?? null,
+            'permissions' => $data['permissions'] ?? null,
         ]);
 
-        return $this->data($user->only(['id', 'name', 'email', 'role', 'is_active']), null, 201);
+        return $this->data($user->only(['id', 'name', 'email', 'role', 'is_active', 'branch_id', 'permissions']), null, 201);
     }
 
     public function update(Request $request, $id)
@@ -51,6 +56,10 @@ class TeamController extends Controller
             'password' => 'sometimes|nullable|string|min:8|max:100',
             'role' => 'sometimes|in:owner,staff',
             'is_active' => 'sometimes|boolean',
+            'branch_id' => 'sometimes|nullable|integer|exists:branches,id',
+            'permissions' => 'sometimes|nullable|array',
+            'permissions.*' => 'string|in:' . implode(',', array_keys(\App\Support\Access::PERMISSIONS)),
+            'reset_mfa' => 'sometimes|boolean',
         ]);
 
         $actor = $request->attributes->get('admin');
@@ -62,13 +71,17 @@ class TeamController extends Controller
             return $this->message('You cannot deactivate your own account.', 422);
         }
 
-        $update = array_intersect_key($data, array_flip(['name', 'email', 'role', 'is_active']));
+        $update = array_intersect_key($data, array_flip(['name', 'email', 'role', 'is_active', 'branch_id', 'permissions']));
+        if (! empty($data['reset_mfa'])) {
+            $update['totp_enabled'] = false;
+            $update['totp_secret'] = null;
+        }
         if (! empty($data['password'])) {
             $update['password_hash'] = password_hash($data['password'], PASSWORD_BCRYPT, ['cost' => 10]);
         }
         $user->update($update);
 
-        return $this->data($user->only(['id', 'name', 'email', 'role', 'is_active']));
+        return $this->data($user->only(['id', 'name', 'email', 'role', 'is_active', 'branch_id', 'permissions']));
     }
 
     public function destroy(Request $request, $id)

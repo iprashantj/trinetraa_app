@@ -28,6 +28,14 @@
             ],
         ],
         [
+            'title' => '💳 Payments & Billing — used on the billing screen',
+            'fields' => [
+                ['key' => 'upi_id', 'label' => 'Shop UPI ID (payments go straight to this account)', 'placeholder' => 'trinetraa@okbank', 'type' => 'text'],
+                ['key' => 'upi_name', 'label' => 'UPI payee name (shown to the customer)', 'placeholder' => 'Trinetraa Optician', 'type' => 'text'],
+                ['key' => 'gstin', 'label' => 'GSTIN (printed on invoices)', 'placeholder' => '27ABCDE1234F1Z5', 'type' => 'text'],
+            ],
+        ],
+        [
             'title' => '📢 Announcement Bar — banner on every public page',
             'fields' => [
                 ['key' => 'announcement_text', 'label' => 'Announcement Text (leave empty to hide)', 'placeholder' => 'Monsoon Sale — 20% off all frames this week!', 'type' => 'text'],

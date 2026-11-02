@@ -16,19 +16,25 @@
         $_canonical = $__env->yieldContent('canonical', $_siteUrl . '/' . ltrim(request()->path(), '/'));
         $_noIndex  = $__env->yieldContent('no_index', '');
     @endphp
-    @if($_noIndex)<meta name="robots" content="noindex,nofollow">@endif
+    @if($_noIndex)<meta name="robots" content="noindex,nofollow">@else<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">@endif
     <link rel="canonical" href="{{ $_canonical }}">
+    <link rel="alternate" hreflang="en-IN" href="{{ $_canonical }}">
+    <link rel="alternate" hreflang="x-default" href="{{ $_canonical }}">
+    <meta name="geo.region" content="IN-MH">
+    <meta name="geo.placename" content="Nashik">
     <meta property="og:type"        content="{{ $_ogType }}">
     <meta property="og:title"       content="{{ $_ogTitle }}">
     <meta property="og:description" content="{{ $_ogDesc }}">
     <meta property="og:url"         content="{{ $_canonical }}">
     <meta property="og:image"       content="{{ $_ogImage }}">
+    <meta property="og:image:alt"   content="{{ $__env->yieldContent('og_image_alt', $_ogTitle) }}">
     <meta property="og:site_name"   content="Trinetraa Optician">
     <meta property="og:locale"      content="en_IN">
     <meta name="twitter:card"        content="summary_large_image">
     <meta name="twitter:title"       content="{{ $_ogTitle }}">
     <meta name="twitter:description" content="{{ $_ogDesc }}">
     <meta name="twitter:image"       content="{{ $_ogImage }}">
+    <meta name="twitter:image:alt"   content="{{ $__env->yieldContent('og_image_alt', $_ogTitle) }}">
     <link rel="manifest" href="/manifest.webmanifest">
     <link rel="icon" type="image/svg+xml" href="/icons/favicon.svg">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
@@ -51,7 +57,9 @@
         $jsonLd = json_encode([
             $at.'context' => 'https://schema.org',
             $at.'type'    => 'Optician',
+            $at.'id'      => 'https://trinetraaoptician.com/#business',
             'name'        => 'Trinetraa Optician',
+            'hasMap'      => $site['googleMapsUrl'] ?: 'https://trinetraaoptician.com/contact',
             'url'         => 'https://trinetraaoptician.com',
             'logo'        => 'https://trinetraaoptician.com/icons/icon-512.png',
             'image'       => 'https://trinetraaoptician.com/icons/icon-512.png',
@@ -78,6 +86,7 @@
         ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
     @endphp
     <script type="application/ld+json">{!! $jsonLd !!}</script>
+    <style>.pp-skip-link{position:absolute;left:-9999px;top:8px;z-index:10000;background:#14B8A6;color:#04201d;padding:.6rem 1rem;border-radius:8px;font-weight:700;text-decoration:none}.pp-skip-link:focus{left:8px}</style>
     @stack('structured_data')
     @stack('head')
 </head>
@@ -101,6 +110,7 @@
     $path = '/' . ltrim(request()->path() === '/' ? '' : request()->path(), '/');
     $toolsActive = collect(['/try-on','/recommend','/vision-test','/services'])->contains(fn($p) => str_starts_with($path, $p));
 @endphp
+<a href="#main" class="pp-skip-link">Skip to main content</a>
 <div class="pp-root" id="ppRoot">
     <nav class="pp-nav" id="ppNav">
         <div class="pp-nav__inner">
@@ -215,7 +225,9 @@
     </script>
     @endif
 
+    <main id="main">
     @yield('content')
+    </main>
 
     {{-- Compare bar --}}
     <div id="compareBar" style="position:fixed;bottom:0;left:0;right:0;z-index:998;background:rgba(13,20,35,0.85);-webkit-backdrop-filter:blur(20px) saturate(1.4);backdrop-filter:blur(20px) saturate(1.4);border-top:1px solid rgba(255,255,255,0.18);color:#fff;box-shadow:0 -12px 40px rgba(0,0,0,0.4);display:none">
@@ -274,7 +286,13 @@
                     </ul>
                 </div>
                 <div>
-                    <div class="pp-footer__col-title">Tools</div>
+                    <div class="pp-footer__col-title">Our Stores</div>
+                    <ul class="pp-footer__links">
+                        @foreach(\App\Models\Branch::where('is_active', true)->orderBy('name')->get(['name','code']) as $__b)
+                            <li><a href="/stores/{{ strtolower($__b->code) }}">{{ $__b->name }}</a></li>
+                        @endforeach
+                    </ul>
+                    <div class="pp-footer__col-title" style="margin-top:1rem">Tools</div>
                     <ul class="pp-footer__links">
                         <li><a href="/try-on">Virtual Try-On</a></li>
                         <li><a href="/recommend">Find My Frames</a></li>

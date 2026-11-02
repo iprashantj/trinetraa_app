@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 
 class ReminderController extends Controller
 {
-    private const VALID_TYPES = ['lens_subscription', 'appointment'];
+    private const VALID_TYPES = ['lens_subscription', 'appointment', 'eye_followup', 'birthday', 'review_request'];
 
     public function index(Request $request)
     {
@@ -31,14 +31,17 @@ class ReminderController extends Controller
     {
         $type = (string) ($request->input('type') ?? '');
         if (! in_array($type, self::VALID_TYPES, true)) {
-            return response()->json(['message' => 'Invalid type. Must be: lens_subscription or appointment'], 400);
+            return response()->json(['message' => 'Invalid type. Must be one of: ' . implode(', ', self::VALID_TYPES)], 400);
         }
 
-        if ($type === 'lens_subscription') {
-            $result = Reminders::sendLensSubscriptionReminders();
-        } else {
-            $result = Reminders::sendAppointmentReminders();
-        }
+        $dry = $request->boolean('dry_run');
+        $result = match ($type) {
+            'lens_subscription' => $dry ? ['total' => Reminders::countLensSubscriptionsDue(), 'sent' => 0, 'failed' => 0, 'dry_run' => true] : Reminders::sendLensSubscriptionReminders(),
+            'appointment' => Reminders::sendAppointmentReminders(),
+            'eye_followup' => Reminders::sendEyeTestFollowups($dry),
+            'birthday' => Reminders::sendBirthdayWishes($dry),
+            'review_request' => Reminders::sendReviewRequests($dry),
+        };
 
         return response()->json(['result' => $result]);
     }

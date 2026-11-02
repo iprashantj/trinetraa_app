@@ -10,7 +10,7 @@ class EyeCheckupBill extends Model
     protected $fillable = [
         'bill_number', 'customer_id', 'customer_name', 'customer_contact', 'bill_date',
         'left_eye', 'right_eye', 'addition', 'frame_amount', 'glass_amount', 'advance_amount',
-        'other_amount', 'with_gst', 'gst_rate', 'subtotal', 'tax', 'total', 'balance_due', 'notes',
+        'other_amount', 'with_gst', 'gst_rate', 'subtotal', 'tax', 'total', 'balance_due', 'notes', 'branch_id', 'payment_method', 'share_token', 'created_by', 'invoice_no',
     ];
     protected $casts = [
         'bill_date' => 'date',

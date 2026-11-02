@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Route;
 Route::post('auth/login', [AdminAuthController::class, 'login'])->middleware('throttle:auth');
 Route::post('auth/logout', [AdminAuthController::class, 'logout']);
 Route::get('auth/me', [AdminAuthController::class, 'me'])->middleware('admin.auth');
-Route::post('auth/change-password', [AdminAuthController::class, 'changePassword'])->middleware(['admin.auth', 'admin.log']);
+Route::post('auth/change-password', [AdminAuthController::class, 'changePassword'])->middleware(['throttle:auth', 'admin.auth', 'admin.log']);
 
 // ─── Team & audit trail (owner-only) ─────────────────────────────────────────
 Route::middleware(['admin.auth', 'admin.owner', 'admin.log'])->group(function () {

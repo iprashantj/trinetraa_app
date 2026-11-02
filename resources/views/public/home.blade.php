@@ -1,9 +1,10 @@
 @extends('layouts.public')
 
-@section('title', 'Trinetraa Optician Nashik — Premium Eyewear & Eye Care')
+@section('title', 'Trinetraa Optician Nashik | Eye Test, Glasses & Sunglasses')
 @section('meta_description', 'Trinetraa Optician Nashik — 1000+ branded frames, free eye tests, prescription glasses, sunglasses & contact lenses. Trusted optician since 2015. Visit us today.')
 @section('og_image', 'https://trinetraaoptician.com/icons/icon-512.png')
 @section('canonical', 'https://trinetraaoptician.com/')
+@section('og_image_alt', 'Trinetraa Optician, Nashik: eye tests, prescription glasses and sunglasses')
 
 @php
     $STATIC_BRANDS = [
@@ -65,7 +66,65 @@
         ['num' => '20+', 'label' => 'Frame Brands'],
         ['num' => '8+', 'label' => 'Awards Won'],
     ];
+
+    // Server-rendered copy of the featured frames so search engines see real product links
+    // without running JavaScript. The client script replaces this with the interactive cards.
+    $SSR_FEATURED = collect();
+    try {
+        $SSR_FEATURED = \App\Models\Eyewear::query()->where('is_active', true)
+            ->with(['category:id,name,slug'])->orderBy('sort_order')->orderByDesc('created_at')->take(6)->get();
+    } catch (\Throwable $e) {
+        // DB unavailable: page still renders and the JS fills the section.
+    }
+
+    $FAQS = [
+        ['Where is Trinetraa Optician located?', 'We are at Narayan Bapu Chowk, Nashik Road, Nashik, Maharashtra. Open the Contact page for directions and a map.'],
+        ['What are your opening hours?', 'We are open Monday to Saturday, 10 AM to 8 PM, and on Sunday from 11 AM to 6 PM.'],
+        ['Do I need an appointment for an eye test?', 'You can book online in a minute on our Appointment page or call us. We confirm your slot within the hour.'],
+        ['Which eyewear brands do you stock?', 'We stock 20+ frame brands including Ray-Ban, Titan Eyeplus, Fastrack, Carrera, Oakley and Tommy Hilfiger, in eyeglasses and sunglasses.'],
+        ["Do you offer contact lenses and children's eye care?", 'Yes. We fit daily, monthly and toric contact lenses, and our optometrists run vision screenings for children.'],
+        ['How soon can I get my glasses?', 'Standard prescriptions are delivered the same day. Complex lenses such as progressives may take longer, and we confirm the date when you order.'],
+    ];
+
+    $homeLd = [
+        [
+            '@context' => 'https://schema.org', '@type' => 'WebSite',
+            'name' => 'Trinetraa Optician', 'url' => 'https://trinetraaoptician.com/', 'inLanguage' => 'en-IN',
+            'potentialAction' => [
+                '@type' => 'SearchAction',
+                'target' => ['@type' => 'EntryPoint', 'urlTemplate' => 'https://trinetraaoptician.com/search?q={search_term_string}'],
+                'query-input' => 'required name=search_term_string',
+            ],
+        ],
+        [
+            '@context' => 'https://schema.org', '@type' => 'FAQPage',
+            'mainEntity' => array_map(fn ($f) => [
+                '@type' => 'Question', 'name' => $f[0],
+                'acceptedAnswer' => ['@type' => 'Answer', 'text' => $f[1]],
+            ], $FAQS),
+        ],
+    ];
+    if ($SSR_FEATURED->count()) {
+        $homeLd[] = [
+            '@context' => 'https://schema.org', '@type' => 'ItemList', 'name' => 'Featured eyewear',
+            'itemListElement' => $SSR_FEATURED->values()->map(fn ($e, $i) => [
+                '@type' => 'ListItem', 'position' => $i + 1,
+                'url' => 'https://trinetraaoptician.com/eyewears/' . $e->slug, 'name' => $e->name,
+            ])->all(),
+        ];
+    }
 @endphp
+
+
+@push('head')
+    <link rel="preload" as="image" href="https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=700&h=800&fit=crop&auto=format&q=80" fetchpriority="high">
+    <link rel="preconnect" href="https://images.unsplash.com" crossorigin>
+@endpush
+@push('structured_data')
+    @foreach($homeLd as $ld)
+    <script type="application/ld+json">{!! json_encode($ld, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
+    @endforeach
+@endpush
 
 @section('content')
 <style>
@@ -79,6 +138,27 @@
       transform: none;
     }
     .reveal { transition-delay: var(--delay, 0s); }
+
+
+    /* Hero buttons */
+    .trin-btn { display:inline-flex; align-items:center; gap:.4rem; padding:.8rem 1.75rem; border-radius:999px; font-family:var(--pp-font-heading); font-size:.9rem; font-weight:600; text-decoration:none; transition:background .2s, transform .2s, box-shadow .2s, border-color .2s, color .2s; }
+    .trin-btn:focus-visible { outline:3px solid #5EEAD4; outline-offset:3px; }
+    .trin-btn--primary { background:#14B8A6; color:#04201d; box-shadow:0 8px 24px rgba(20,184,166,.35); }
+    .trin-btn--primary:hover { background:#2DD4BF; transform:translateY(-2px); color:#04201d; }
+    .trin-btn--ghost { background:transparent; color:#F8FAFC; border:1.5px solid rgba(255,255,255,.4); }
+    .trin-btn--ghost:hover { border-color:#2DD4BF; color:#2DD4BF; transform:translateY(-2px); }
+
+    /* Server-rendered product list + FAQ */
+    .trin-ssr-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:1rem; }
+    .trin-faq { max-width:820px; margin:0 auto; display:grid; gap:.75rem; }
+    .trin-faq details { background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.14); border-radius:14px; padding:0 1.25rem; transition:border-color .2s; }
+    .trin-faq details[open] { border-color:rgba(45,212,191,.5); }
+    .trin-faq summary { cursor:pointer; list-style:none; padding:1.1rem 0; font-weight:600; color:#F8FAFC; display:flex; justify-content:space-between; gap:1rem; align-items:center; }
+    .trin-faq summary::-webkit-details-marker { display:none; }
+    .trin-faq summary::after { content:'+'; font-size:1.4rem; color:#2DD4BF; line-height:1; transition:transform .2s; }
+    .trin-faq details[open] summary::after { transform:rotate(45deg); }
+    .trin-faq p { margin:0 0 1.1rem; color:#B8C6D8; line-height:1.7; font-size:.92rem; }
+    @media (prefers-reduced-motion: reduce) { .reveal, .trin-btn { transition:none !important; } .trin-marquee-track { animation:none !important; } .reveal { opacity:1; transform:none; } }
 
     /* Brand marquee */
     @keyframes marquee {
@@ -326,16 +406,8 @@
                     Nashik's trusted optical clinic offering precision eye care, premium eyewear, and personalized vision solutions since 2015.
                 </p>
                 <div class="reveal" style="--delay:0.24s;display:flex;gap:0.75rem;flex-wrap:wrap;margin-bottom:2.5rem">
-                    <a href="/appointment" style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.8rem 1.75rem;background:#14B8A6;color:#fff;border-radius:999px;font-family:var(--pp-font-heading);font-size:0.875rem;font-weight:600;text-decoration:none;transition:background 0.2s, transform 0.2s, box-shadow 0.2s;box-shadow:0 4px 16px rgba(20,184,166,0.35)"
-                        onmouseenter="this.style.background='#0D9488';this.style.transform='translateY(-2px)'"
-                        onmouseleave="this.style.background='#2DD4BF';this.style.transform='none'">
-                        Book Appointment
-                    </a>
-                    <a href="/eyewears" style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.8rem 1.75rem;background:transparent;color:#F8FAFC;border:1.5px solid rgba(255,255,255,0.35);border-radius:999px;font-family:var(--pp-font-heading);font-size:0.875rem;font-weight:600;text-decoration:none;transition:border-color 0.2s, background 0.2s, color 0.2s"
-                        onmouseenter="this.style.borderColor='#2DD4BF';this.style.color='#2DD4BF'"
-                        onmouseleave="this.style.borderColor='rgba(255,255,255,0.35)';this.style.color='#0F172A'">
-                        Browse Eyewear
-                    </a>
+                    <a href="/appointment" class="trin-btn trin-btn--primary">Book Appointment</a>
+                    <a href="/eyewears" class="trin-btn trin-btn--ghost">Browse Eyewear</a>
                 </div>
 
                 {{-- Mini testimonial + hours widgets --}}
@@ -357,7 +429,7 @@
                     </svg>
                     <div style="font-size:0.78rem;color:#B8C6D8">
                         <strong style="display:block;font-weight:700;color:#F8FAFC">Working Hours</strong>
-                        Mon–Sat: 9:30am–8:30pm &nbsp;|&nbsp; Sun: 10am–6pm
+                        Mon–Sat: 10am–8pm &nbsp;|&nbsp; Sun: 11am–6pm
                     </div>
                 </div>
             </div>
@@ -367,7 +439,8 @@
                 <div style="border-radius:24px;overflow:hidden;aspect-ratio:7/8;box-shadow:0 32px 80px rgba(20,184,166,0.18), 0 8px 24px rgba(0,0,0,0.08);position:relative">
                     <img
                         src="https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=700&h=800&fit=crop&auto=format&q=80"
-                        alt="Woman wearing stylish glasses"
+                        alt="Stylish round-frame eyeglasses from the Trinetraa Optician collection in Nashik"
+                        width="700" height="800" fetchpriority="high" decoding="async"
                         style="width:100%;height:100%;object-fit:cover;object-position:center top;display:block"
                         loading="eager">
                     {{-- Floating badge --}}
@@ -395,7 +468,7 @@
 <div style="background:rgba(255,255,255,0.04);border-top:1px solid rgba(255,255,255,0.12);border-bottom:1px solid rgba(255,255,255,0.12);padding:1.25rem 0;overflow:hidden">
     <div class="trin-marquee-track" id="brandMarquee">
         @foreach(array_merge($STATIC_BRANDS, $STATIC_BRANDS) as $name)
-            <span style="padding:0 2.5rem;font-size:0.8rem;font-weight:700;color:rgba(255,255,255,0.45);white-space:nowrap;letter-spacing:0.08em;text-transform:uppercase;border-right:1px solid rgba(255,255,255,0.12)">{{ $name }}</span>
+            <span @if($loop->index >= count($STATIC_BRANDS)) aria-hidden="true" @endif style="padding:0 2.5rem;font-size:0.8rem;font-weight:700;color:rgba(255,255,255,0.45);white-space:nowrap;letter-spacing:0.08em;text-transform:uppercase;border-right:1px solid rgba(255,255,255,0.12)">{{ $name }}</span>
         @endforeach
     </div>
 </div>
@@ -569,7 +642,26 @@
 
         {{-- Featured products container (filled by JS) --}}
         <div id="featuredWrap">
+            @if($SSR_FEATURED->count())
+            <div class="trin-ssr-grid">
+                @foreach($SSR_FEATURED as $e)
+                    @php $sale = $e->discount_percentage > 0 ? $e->price * (1 - $e->discount_percentage / 100) : null; @endphp
+                    <a href="/eyewears/{{ $e->slug }}" class="pp-product-card" style="text-decoration:none">
+                        <div class="pp-product-card__image-wrap">
+                            @if($e->image)<img src="{{ preg_match('#^https://images\.unsplash\.com/#', $e->image) && ! str_contains($e->image, 'auto=') ? $e->image . (str_contains($e->image, '?') ? '&' : '?') . 'auto=format&q=75' : $e->image }}" alt="{{ $e->name }}{{ $e->brand ? ' by '.$e->brand : '' }}" width="400" height="400" loading="lazy" decoding="async">@else<div class="pp-product-card__placeholder">🕶️</div>@endif
+                        </div>
+                        <div class="pp-product-card__body">
+                            <div class="pp-product-card__category">{{ $e->category->name ?? '' }}</div>
+                            <h3 class="pp-product-card__name" style="margin:0">{{ $e->name }}</h3>
+                            @if($e->brand)<div class="pp-product-card__brand">{{ $e->brand }}</div>@endif
+                            <div class="pp-product-card__pricing"><span class="pp-product-card__price">₹{{ number_format($sale ?? $e->price, 0) }}</span>@if($sale)<span class="pp-product-card__original">₹{{ number_format($e->price, 0) }}</span>@endif</div>
+                        </div>
+                    </a>
+                @endforeach
+            </div>
+            @else
             <div class="pp-loading"><div class="pp-spinner"></div></div>
+            @endif
         </div>
     </div>
 </section>
@@ -609,6 +701,21 @@
                 onmouseleave="this.style.background='transparent';this.style.borderColor='rgba(45,212,191,0.4)'">
                 Read All Reviews
             </a>
+        </div>
+    </div>
+</section>
+
+{{-- ── FAQ ─────────────────────────────────────────── --}}
+<section style="padding:5rem 0" aria-labelledby="faqHeading">
+    <div class="pp-container">
+        <div style="text-align:center;margin-bottom:2.5rem">
+            <h2 id="faqHeading" style="font-family:var(--pp-font-heading);font-size:clamp(1.5rem, 2.5vw, 2rem);font-weight:800;color:#F8FAFC;letter-spacing:-0.03em;margin:0 0 .5rem">Frequently Asked Questions</h2>
+            <p style="color:#9FB1C7;margin:0">Quick answers about eye tests, eyewear and visiting our Nashik store.</p>
+        </div>
+        <div class="trin-faq">
+            @foreach($FAQS as $f)
+                <details><summary>{{ $f[0] }}</summary><p>{{ $f[1] }}</p></details>
+            @endforeach
         </div>
     </div>
 </section>
@@ -660,6 +767,12 @@
   "use strict";
 
   var newRef = null; // products scroll container, set after render
+
+  // Unsplash-hosted images: ask for the browser's best format (WebP/AVIF) at a lighter quality.
+  function ppImg(u) {
+    if (typeof u !== "string" || u.indexOf("https://images.unsplash.com/") !== 0 || u.indexOf("auto=") !== -1) return u;
+    return u + (u.indexOf("?") === -1 ? "?" : "&") + "auto=format&q=75";
+  }
 
   function esc(s) {
     return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
@@ -722,7 +835,7 @@
     var priceShown = salePrice !== null ? salePrice.toFixed(0) : Number(item.price).toFixed(0);
 
     var imageHTML = item.image
-      ? '<img src="' + esc(item.image) + '" alt="' + esc(item.name) + '" loading="lazy">'
+      ? '<img src="' + esc(ppImg(item.image)) + '" alt="' + esc(item.name) + '" width="400" height="400" loading="lazy" decoding="async">'
       : '<div class="pp-product-card__placeholder">🕶️</div>';
     var badgeHTML = item.discount_percentage > 0
       ? '<span class="pp-badge-sale">' + item.discount_percentage + '% OFF</span>'
@@ -886,7 +999,7 @@
     if (!section || !grid) return;
     grid.innerHTML = withCount.map(function (cat, i) {
       var inner = cat.image
-        ? '<img src="' + esc(cat.image) + '" alt="' + esc(cat.name) + '" loading="lazy">'
+        ? '<img src="' + esc(ppImg(cat.image)) + '" alt="' + esc(cat.name) + '" loading="lazy" decoding="async">'
         : '<div style="width:100%;height:100%;background:rgba(20,184,166,0.16);display:flex;align-items:center;justify-content:center;font-size:3rem">🕶️</div>';
       return (
         '<a href="/eyewears?category_slug=' + esc(cat.slug) + '" class="pp-category-card reveal" style="--delay:' + (i * 0.07) + 's">' +
